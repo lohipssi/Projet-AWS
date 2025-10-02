@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="hero-section text-center py-5">
+            <h1 class="display-4 mb-4">
+                <i class="fas fa-cloud text-primary"></i>
+                AWS Manager
+            </h1>
+            <p class="lead">Interface de gestion pour vos ressources AWS</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-server fa-3x text-warning mb-3"></i>
+                <h5>Gestion EC2</h5>
+                <p>Gérez vos instances EC2</p>
+                <a href="{{ url_for('ec2_dashboard') }}" class="btn btn-warning">Accéder</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-database fa-3x text-info mb-3"></i>
+                <h5>Gestion S3</h5>
+                <p>Gérez vos buckets S3</p>
+                <a href="{{ url_for('s3_dashboard') }}" class="btn btn-info">Accéder</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

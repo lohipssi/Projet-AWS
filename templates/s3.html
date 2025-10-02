@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}S3 Dashboard - AWS Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-database text-info me-2"></i>Gestion S3</h2>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createBucketModal">
+                <i class="fas fa-plus me-2"></i>Créer un bucket
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques S3 -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total Buckets</h6>
+                        <h3 id="totalBuckets">-</h3>
+                    </div>
+                    <i class="fas fa-database fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total Objets</h6>
+                        <h3 id="totalObjects">-</h3>
+                    </div>
+                    <i class="fas fa-file fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Régions</h6>
+                        <h3 id="totalRegions">-</h3>
+                    </div>
+                    <i class="fas fa-globe fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des buckets -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Buckets S3</h5>
+        <button class="btn btn-outline-primary btn-sm" onclick="loadBuckets()">
+            <i class="fas fa-sync-alt me-1"></i>Actualiser
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="loadingBuckets" class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2">Chargement des buckets...</p>
+        </div>
+        <div id="bucketsTable" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Région</th>
+                            <th>Date de création</th>
+                            <th>Objets</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bucketsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="noBuckets" style="display: none;" class="text-center py-4">
+            <i class="fas fa-database fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Aucun bucket trouvé</p>
+        </div>
+    </div>
+</div>
+
+<!-- Upload de fichiers -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload de fichiers</h5>
+    </div>
+    <div class="card-body">
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-4">
+                    <select class="form-select" id="uploadBucket" required>
+                        <option value="">Sélectionner un bucket</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <input type="file" class="form-control" id="fileInput" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload me-1"></i>Upload
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Créer Bucket -->
+<div class="modal fade" id="createBucketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Créer un nouveau bucket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBucketForm">
+                    <div class="mb-3">
+                        <label for="bucketName" class="form-label">Nom du bucket</label>
+                        <input type="text" class="form-control" id="bucketName" required>
+                        <div class="form-text">Le nom doit être unique globalement et respecter les règles AWS</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bucketRegion" class="form-label">Région</label>
+                        <select class="form-select" id="bucketRegion" required>
+                            <option value="eu-west-1">Europe (Irlande)</option>
+                            <option value="eu-central-1">Europe (Francfort)</option>
+                            <option value="us-east-1">US Est (Virginie du Nord)</option>
+                            <option value="us-west-2">US Ouest (Oregon)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="createBucket()">
+                    <i class="fas fa-plus me-1"></i>Créer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Objets du Bucket -->
+<div class="modal fade" id="bucketObjectsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bucketObjectsTitle">Objets du bucket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="loadingObjects" class="text-center py-4">
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2">Chargement des objets...</p>
+                </div>
+                <div id="objectsList" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Taille</th>
+                                    <th>Modifié le</th>
+                                    <th>Classe de stockage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="objectsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="noObjects" style="display: none;" class="text-center py-4">
+                    <p class="text-muted">Aucun objet dans ce bucket</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/s3.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}EC2 Dashboard - AWS Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-server text-warning me-2"></i>Gestion EC2</h2>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#launchInstanceModal">
+                <i class="fas fa-plus me-2"></i>Lancer une instance
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Instances actives</h6>
+                        <h3 id="runningCount">-</h3>
+                    </div>
+                    <i class="fas fa-play fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Instances arrêtées</h6>
+                        <h3 id="stoppedCount">-</h3>
+                    </div>
+                    <i class="fas fa-stop fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>En cours</h6>
+                        <h3 id="pendingCount">-</h3>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total</h6>
+                        <h3 id="totalCount">-</h3>
+                    </div>
+                    <i class="fas fa-server fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des instances -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Instances EC2</h5>
+        <button class="btn btn-outline-primary btn-sm" onclick="loadInstances()">
+            <i class="fas fa-sync-alt me-1"></i>Actualiser
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="loadingInstances" class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2">Chargement des instances...</p>
+        </div>
+        <div id="instancesTable" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Instance ID</th>
+                            <th>Type</th>
+                            <th>État</th>
+                            <th>IP Publique</th>
+                            <th>IP Privée</th>
+                            <th>Zone</th>
+                            <th>Lancée le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instancesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="noInstances" style="display: none;" class="text-center py-4">
+            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Aucune instance trouvée</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lancer Instance -->
+<div class="modal fade" id="launchInstanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lancer une nouvelle instance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="launchInstanceForm">
+                    <div class="mb-3">
+                        <label for="instanceName" class="form-label">Nom de l'instance</label>
+                        <input type="text" class="form-control" id="instanceName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="instanceType" class="form-label">Type d'instance</label>
+                        <select class="form-select" id="instanceType" required>
+                            <option value="t2.micro">t2.micro (1 vCPU, 1 GB RAM)</option>
+                            <option value="t2.small">t2.small (1 vCPU, 2 GB RAM)</option>
+                            <option value="t2.medium">t2.medium (2 vCPU, 4 GB RAM)</option>
+                            <option value="t3.micro">t3.micro (2 vCPU, 1 GB RAM)</option>
+                            <option value="t3.small">t3.small (2 vCPU, 2 GB RAM)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amiId" class="form-label">AMI ID</label>
+                        <input type="text" class="form-control" id="amiId" value="ami-0c02fb55956c7d316" placeholder="Amazon Linux 2 AMI">
+                        <div class="form-text">Laissez vide pour utiliser Amazon Linux 2 par défaut</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyName" class="form-label">Paire de clés (optionnel)</label>
+                        <input type="text" class="form-control" id="keyName" placeholder="my-key-pair">
+                        <div class="form-text">Nom de la paire de clés pour la connexion SSH</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="launchInstance()">
+                    <i class="fas fa-play me-1"></i>Lancer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ec2.js') }}"></script>
+{% endblock %}
